@@ -58,7 +58,7 @@ function add_buttons() {
 }
 
 function call_for_floor(floor_n) {
-	alert(floor_n)
+	go_to_floor(floor_n)
 }
 
 function next_cycle() {
@@ -127,15 +127,36 @@ function draw() {
 *****************************************************************/
 var position = "";
 var control_json = {}
+var floor_to_go = 0
 var sensors = {}
 const states = {
 	WAITING: "Жду команды",
 	SEARCH_FOR_FLOOR: "Ищу этаж",
+	GO_DOWN_TO_FLOOR: "Еду вниз",
+	GO_UP_TO_FLOOR: "Еду вверх",
 }
-
 var state = states.SEARCH_FOR_FLOOR
 
+function go_to_floor(floor_n) {
+	if (sensors.sensors.FloorSensor.includes(true) == false) {
+		return
+	}
 
+	floor_to_go = floor_n-1
+
+	var current_floor = sensors.sensors.FloorSensor.indexOf(true)
+
+	if ( current_floor == floor_to_go ) {
+		return
+	}
+
+	if ( current_floor > floor_to_go ) {
+		state = states.GO_DOWN_TO_FLOOR
+	}
+	else {
+		state = states.GO_UP_TO_FLOOR
+	}
+}
 
 function controller_cycle() {
 	control_json = {
@@ -153,9 +174,12 @@ function controller_cycle() {
 
 	switch(state)
 	{
-	    case states.SEARCH_FOR_FLOOR:
-	        if (sensors.sensors.FloorSensor.includes(true) ) {
-				state = 0
+		case states.WAITING:
+			break;
+
+		case states.SEARCH_FOR_FLOOR:
+			if (sensors.sensors.FloorSensor.includes(true) ) {
+				state = states.WAITING
 				return control_json
 			}
 				
@@ -165,10 +189,38 @@ function controller_cycle() {
 			}
 				
 			control_json.MoveUpFast = true
-	        break;
+			break;
 
-	    case states.WAITING:
-	    	break;
+		case states.GO_UP_TO_FLOOR:
+			var current_floor = sensors.sensors.FloorSensor.indexOf(true)
+			if (current_floor == floor_to_go) {
+				state = states.WAITING
+				break;
+			}
+			var approaching_floor = sensors.sensors.ApproachSensor.indexOf(true)
+			if (approaching_floor == floor_to_go) {
+				control_json.MoveUpSlow = true
+				break;
+			}
+
+			control_json.MoveUpFast = true
+			break;
+
+
+		case states.GO_DOWN_TO_FLOOR:
+			var current_floor = sensors.sensors.FloorSensor.indexOf(true)
+			if (current_floor == floor_to_go) {
+				state = states.WAITING
+				break;
+			}
+			var approaching_floor = sensors.sensors.ApproachSensor.indexOf(true)
+			if (approaching_floor == floor_to_go) {
+				control_json.MoveDownSlow = true
+				break;
+			}
+
+			control_json.MoveDownFast = true
+			break;
 	}
 
 	
