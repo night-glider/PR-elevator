@@ -1,0 +1,23 @@
+<label for="name_input">Имя</label>
+<input id="name_input" value="Николай">
+<br>
+<label for="time_input">Замедление</label>
+<input id="time_input" value="1.0">
+<br>
+<label>Этажи</label>
+<input id="floors_input" value="5">
+<br>
+<label>Хост</label>
+<input id="host_input" value="https://lstu.fusionsoft.ru/srv-elevator">
+<br>
+<button onclick="start_elevator()">Начать!</button>
+<div style="display: flex;">
+	<div id="buttons_list">
+
+	</div>
+	<div>
+		<canvas id="main_canvas" width="300" height="400" style="border:1px solid #000000;"></canvas>
+	</div>
+</div>
+
+<script src="index.js"></script>
