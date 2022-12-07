@@ -5,6 +5,8 @@ var session_id = 0;
 var host = "";
 var floors = 5;
 const ctx = document.getElementById("main_canvas").getContext("2d");
+const state_label = document.getElementById("state_label");
+const weight_label = document.getElementById("weight_label");
 
 
 
@@ -105,8 +107,18 @@ function init() {
 }
 
 function draw() {
+	window.requestAnimationFrame(draw);
 	ctx.globalCompositeOperation = "destination-over";
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+	if( Object.keys(sensors).length === 0 ) {
+		return
+	}
+
+	elevator.src = "elevator_icon.png";
+	if (sensors.emulation.Door == "OPENED") {
+		elevator.src = "elevator_icon_opened.png";
+	}
 
 	ctx.drawImage(elevator, 100, (ctx.canvas.height - 50) - position * (100/3) - 75, 75, 75);
 	ctx.beginPath();
@@ -114,10 +126,14 @@ function draw() {
 		var y = ctx.canvas.height - 50 - i * 100
 		ctx.moveTo(50, y);
 		ctx.lineTo(250, y);
+		ctx.font = "12px serif";
+		ctx.fillText(i + 1 + " этаж", 5, y);
 	}
 	ctx.stroke();
 
-	window.requestAnimationFrame(draw);
+	state_label.innerHTML = "Состояние: " + state
+	weight_label.innerHTML = "Вес: " + sensors.sensors.WeightSensor
+
 }
 
 
@@ -132,8 +148,11 @@ var sensors = {}
 const states = {
 	WAITING: "Жду команды",
 	SEARCH_FOR_FLOOR: "Ищу этаж",
+	CLOSE_AND_GO_DOWN: "Закрываю двери, потом еду вниз",
+	CLOSE_AND_GO_UP: "Закрываю двери, потом еду вверх",
 	GO_DOWN_TO_FLOOR: "Еду вниз",
 	GO_UP_TO_FLOOR: "Еду вверх",
+	OPENING_DOORS: "Открываю двери",
 }
 var state = states.SEARCH_FOR_FLOOR
 
@@ -151,10 +170,10 @@ function go_to_floor(floor_n) {
 	}
 
 	if ( current_floor > floor_to_go ) {
-		state = states.GO_DOWN_TO_FLOOR
+		state = states.CLOSE_AND_GO_DOWN
 	}
 	else {
-		state = states.GO_UP_TO_FLOOR
+		state = states.CLOSE_AND_GO_UP
 	}
 }
 
@@ -179,7 +198,7 @@ function controller_cycle() {
 
 		case states.SEARCH_FOR_FLOOR:
 			if (sensors.sensors.FloorSensor.includes(true) ) {
-				state = states.WAITING
+				state = states.OPENING_DOORS
 				return control_json
 			}
 				
@@ -194,7 +213,7 @@ function controller_cycle() {
 		case states.GO_UP_TO_FLOOR:
 			var current_floor = sensors.sensors.FloorSensor.indexOf(true)
 			if (current_floor == floor_to_go) {
-				state = states.WAITING
+				state = states.OPENING_DOORS
 				break;
 			}
 			var approaching_floor = sensors.sensors.ApproachSensor.indexOf(true)
@@ -210,7 +229,7 @@ function controller_cycle() {
 		case states.GO_DOWN_TO_FLOOR:
 			var current_floor = sensors.sensors.FloorSensor.indexOf(true)
 			if (current_floor == floor_to_go) {
-				state = states.WAITING
+				state = states.OPENING_DOORS
 				break;
 			}
 			var approaching_floor = sensors.sensors.ApproachSensor.indexOf(true)
@@ -221,6 +240,33 @@ function controller_cycle() {
 
 			control_json.MoveDownFast = true
 			break;
+
+		case states.OPENING_DOORS:
+			if (sensors.sensors.DoorOpened == true) {
+				state = states.WAITING
+				break;
+			}
+
+			control_json.DoOpen = true
+			break
+
+		case states.CLOSE_AND_GO_UP:
+			if (sensors.sensors.DoorClosed == true) {
+				state = states.GO_UP_TO_FLOOR
+				break;
+			}
+
+			control_json.DoClose = true
+			break
+
+		case states.CLOSE_AND_GO_DOWN:
+			if (sensors.sensors.DoorClosed == true) {
+				state = states.GO_DOWN_TO_FLOOR
+				break;
+			}
+
+			control_json.DoClose = true
+			break
 	}
 
 	
