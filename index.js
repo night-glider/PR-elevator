@@ -7,6 +7,8 @@ var floors = 5;
 const ctx = document.getElementById("main_canvas").getContext("2d");
 const state_label = document.getElementById("state_label");
 const weight_label = document.getElementById("weight_label");
+const enter_button = document.getElementById("enter_button");
+const exit_button = document.getElementById("exit_button");
 
 
 
@@ -63,6 +65,30 @@ function call_for_floor(floor_n) {
 	go_to_floor(floor_n)
 }
 
+function enter_passenger() {
+	var requestOptions = {
+	  method: 'POST',
+	  redirect: 'follow'
+	};
+
+	fetch(`${host}/entryPassengers?sessionId=${session_id}&numberOfPeople=1`, requestOptions)
+	  .then(response => response.text())
+	  .then(result => console.log(result))
+	  .catch(error => console.log('error', error));
+}
+
+function exit_passenger() {
+	var requestOptions = {
+	  method: 'POST',
+	  redirect: 'follow'
+	};
+
+	fetch(`${host}/exitPassengers?sessionId=${session_id}&numberOfPeople=1`, requestOptions)
+	  .then(response => response.text())
+	  .then(result => console.log(result))
+	  .catch(error => console.log('error', error));
+}
+
 function next_cycle() {
 	var new_controls = controller_cycle()
 
@@ -86,6 +112,9 @@ function next_cycle() {
 			position = sensors.emulation.Position;
 
 			console.log(position);
+			if (sensors.emulation.Alarm != null) {
+				alert(sensors.emulation.Alarm)
+			}
 		})
 		.catch((error) => console.log("error", error));
 }
@@ -133,7 +162,8 @@ function draw() {
 
 	state_label.innerHTML = "Состояние: " + state
 	weight_label.innerHTML = "Вес: " + sensors.sensors.WeightSensor
-
+	enter_button.disabled = state != states.WAITING
+	exit_button.disabled = state != states.WAITING
 }
 
 
@@ -225,7 +255,6 @@ function controller_cycle() {
 			control_json.MoveUpFast = true
 			break;
 
-
 		case states.GO_DOWN_TO_FLOOR:
 			var current_floor = sensors.sensors.FloorSensor.indexOf(true)
 			if (current_floor == floor_to_go) {
@@ -251,6 +280,14 @@ function controller_cycle() {
 			break
 
 		case states.CLOSE_AND_GO_UP:
+			if (sensors.sensors.WeightSensor >= 500) {
+				break;
+			}
+
+			if (sensors.sensors.ObstacleSensor == true) {
+				break;
+			}
+
 			if (sensors.sensors.DoorClosed == true) {
 				state = states.GO_UP_TO_FLOOR
 				break;
@@ -260,6 +297,14 @@ function controller_cycle() {
 			break
 
 		case states.CLOSE_AND_GO_DOWN:
+			if (sensors.sensors.WeightSensor >= 500) {
+				break;
+			}
+
+			if (sensors.sensors.ObstacleSensor == true) {
+				break;
+			}
+
 			if (sensors.sensors.DoorClosed == true) {
 				state = states.GO_DOWN_TO_FLOOR
 				break;
