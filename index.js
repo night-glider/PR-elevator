@@ -191,6 +191,10 @@ function go_to_floor(floor_n) {
 		return
 	}
 
+	if (sensors.sensors.WeightSensor >= 500) {
+		return;
+	}	
+
 	floor_to_go = floor_n-1
 
 	var current_floor = sensors.sensors.FloorSensor.indexOf(true)
@@ -280,10 +284,6 @@ function controller_cycle() {
 			break
 
 		case states.CLOSE_AND_GO_UP:
-			if (sensors.sensors.WeightSensor >= 500) {
-				break;
-			}
-
 			if (sensors.sensors.ObstacleSensor == true) {
 				break;
 			}
@@ -297,10 +297,6 @@ function controller_cycle() {
 			break
 
 		case states.CLOSE_AND_GO_DOWN:
-			if (sensors.sensors.WeightSensor >= 500) {
-				break;
-			}
-
 			if (sensors.sensors.ObstacleSensor == true) {
 				break;
 			}
